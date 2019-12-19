@@ -18,7 +18,8 @@ def calc_fuel_requirement(mass: int) -> int:
 
 def main():
     masses = [int(line) for line in fileinput.input()]
-    fuel_requirements = [calc_fuel_requirement_recursively(mass) for mass in masses]
+    fuel_requirements = [
+        calc_fuel_requirement_recursively(mass) for mass in masses]
     print(sum(fuel_requirements))
 
 

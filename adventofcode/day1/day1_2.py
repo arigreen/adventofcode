@@ -6,7 +6,7 @@ import pytest
 from support import timing
 
 
-def calc_fuel_requirement_recursively(mass: int) -> int:
+def calc_fuel_requirement_repeatedly(mass: int) -> int:
     result = 0
     while mass > 0:
         fuel = calc_fuel_requirement(mass)
@@ -22,7 +22,7 @@ def calc_fuel_requirement(mass: int) -> int:
 def compute(s: str) -> int:
     masses = [int(line) for line in s.splitlines()]
     fuel_requirements = [
-        calc_fuel_requirement_recursively(mass) for mass in masses]
+        calc_fuel_requirement_repeatedly(mass) for mass in masses]
     return sum(fuel_requirements)
 
 

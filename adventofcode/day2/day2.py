@@ -1,24 +1,15 @@
-# Sum Fuel requirements
-# https://adventofcode.com/2019/day/2
+import argparse
 import copy
-import fileinput
 import itertools
 from typing import List
+
+import pytest
+from support import timing
 
 
 Data = List[int]
 
 GOAL_RESULT = 19690720
-
-
-class OP_CODES:
-    ADD = 1
-    MULTIPLY = 2
-    TERM = 99
-
-
-def should_terminate(data: List[int], position: int) -> bool:
-    return data[position] == OP_CODES.TERM
 
 
 def execute_command(data: List[int], position: int) -> None:
@@ -34,9 +25,19 @@ def execute_command(data: List[int], position: int) -> None:
         raise Exception("Unexpected opcode {}".format(data[position]))
 
 
-def parse_data_from_input(lines: List[str]) -> Data:
+class OP_CODES:
+    ADD = 1
+    MULTIPLY = 2
+    TERM = 99
+
+
+def should_terminate(data: List[int], position: int) -> bool:
+    return data[position] == OP_CODES.TERM
+
+
+def parse_data_from_input(input_s: str) -> Data:
     strings = list(itertools.chain.from_iterable(
-        [line.strip().split(",") for line in lines]))
+        [line.strip().split(",") for line in input_s.splitlines()]))
     data = [int(x) for x in strings]
     return data
 
@@ -60,13 +61,14 @@ def execute_program(data: Data) -> int:
     return data[0]
 
 
-def solve_part_1(data: Data) -> int:
+def compute_1(s: str) -> int:
+    data = parse_data_from_input(s)
     data = restore_gravity_assist(data)
-    result = execute_program(data)
-    return result
+    return execute_program(data)
 
 
-def solve_part_2(data: Data) -> str:
+def compute_2(s: str) -> int:
+    data = parse_data_from_input(s)
     # Loop through all possible inputs until we find one that matches expected
     # output
     for input1 in range(100):
@@ -75,20 +77,43 @@ def solve_part_2(data: Data) -> str:
             set_inputs(data_copy, input1, input2)
             result = execute_program(data_copy)
             if result == GOAL_RESULT:
-                return f'{input1}{input2}'
-    return '-1'
+                return input1 * 100 + input2
+    return 0
 
 
-def main():
-    input = fileinput.input()
-    data = parse_data_from_input(input)
+@pytest.mark.parametrize(
+    ('input_s', 'expected'),
+    (
+        # put given test cases here
+    ),
+)
+def test_1(input_s: str, expected: int) -> None:
+    assert compute_1(input_s) == expected
 
-    result_1 = solve_part_1(data)
-    result_2 = solve_part_2(data)
 
-    print(f"Part 1: {result_1}")
-    print(f"Part 2: {result_2}")
+@pytest.mark.parametrize(
+    ('input_s', 'expected'),
+    (
+        # put given test cases here
+    ),
+)
+def test_2(input_s: str, expected: int) -> None:
+    assert compute_2(input_s) == expected
 
 
-if __name__ == "__main__":
-    main()
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('data_file')
+    args = parser.parse_args()
+
+    with open(args.data_file) as f, timing():
+        print(f'Part 1: {compute_1(f.read())}')
+
+    with open(args.data_file) as f, timing():
+        print(f'Part 2: {compute_2(f.read())}')
+
+    return 0
+
+
+if __name__ == '__main__':
+    exit(main())

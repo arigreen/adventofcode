@@ -84,11 +84,15 @@ def compute_2(s: str) -> int:
 @pytest.mark.parametrize(
     ('input_s', 'expected'),
     (
-        # put given test cases here
+        ('1,9,10,3,2,3,11,0,99,30,40,50', 3500),
+        ('1,0,0,0,99', 2),
+        ('2,3,0,3,99', 2),
+        ('2,4,4,5,99,0', 2),
+        ('1,1,1,4,99,5,6,0,99', 30),
     ),
 )
 def test_1(input_s: str, expected: int) -> None:
-    assert compute_1(input_s) == expected
+    assert execute_program(parse_data_from_input(input_s)) == expected
 
 
 @pytest.mark.parametrize(

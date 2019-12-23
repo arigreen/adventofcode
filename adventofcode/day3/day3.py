@@ -18,6 +18,18 @@ Path = List[str]
 Point = Tuple[int, int]
 
 
+UNIT_VEC = {
+    'U': (0, 1),
+    'D': (0, -1),
+    'R': (1, 0),
+    'L': (-1, 0),
+}
+
+
+def add_points(p1: Point, p2: Point) -> Point:
+    return (p1[0] + p2[0], p1[1] + p2[1])
+
+
 class Wire:
 
     def __init__(self, path: Path):
@@ -28,32 +40,13 @@ class Wire:
         current = (0, 0)
         total_steps = 0
         for step in self.path:
-            dir = step[0]
-            amount = int(step[1:])
-            if dir == 'U':
-                for x in range(amount):
-                    total_steps += 1
-                    current = (current[0], current[1]+1)
-                    if current not in self.points_to_steps:
-                        self.points_to_steps[current] = total_steps
-            elif dir == 'D':
-                for x in range(amount):
-                    total_steps += 1
-                    current = (current[0], current[1]-1)
-                    if current not in self.points_to_steps:
-                        self.points_to_steps[current] = total_steps
-            elif dir == 'L':
-                for x in range(amount):
-                    total_steps += 1
-                    current = (current[0]-1, current[1])
-                    if current not in self.points_to_steps:
-                        self.points_to_steps[current] = total_steps
-            elif dir == 'R':
-                for x in range(amount):
-                    total_steps += 1
-                    current = (current[0]+1, current[1])
-                    if current not in self.points_to_steps:
-                        self.points_to_steps[current] = total_steps
+            direction, amount = step[0], int(step[1:])
+            step_vector = UNIT_VEC[direction]
+            for _ in range(amount):
+                total_steps += 1
+                current = add_points(current, step_vector)
+                if current not in self.points_to_steps:
+                    self.points_to_steps[current] = total_steps
 
 
 def parse_data_from_input(input_s: str) -> List[Wire]:

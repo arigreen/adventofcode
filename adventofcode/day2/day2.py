@@ -1,5 +1,4 @@
 import argparse
-import copy
 import itertools
 from typing import List
 
@@ -47,10 +46,8 @@ def set_inputs(data, input1, input2) -> None:
     data[2] = input2
 
 
-def restore_gravity_assist(data: Data) -> Data:
-    modified = copy.deepcopy(data)
-    set_inputs(modified, 12, 2)
-    return modified
+def restore_gravity_assist(data: Data) -> None:
+    set_inputs(data, 12, 2)
 
 
 def execute_program(data: Data) -> int:
@@ -63,7 +60,7 @@ def execute_program(data: Data) -> int:
 
 def compute_1(s: str) -> int:
     data = parse_data_from_input(s)
-    data = restore_gravity_assist(data)
+    restore_gravity_assist(data)
     return execute_program(data)
 
 
@@ -73,7 +70,7 @@ def compute_2(s: str) -> int:
     # output
     for input1 in range(100):
         for input2 in range(100):
-            data_copy = copy.deepcopy(data)
+            data_copy = data[:]
             set_inputs(data_copy, input1, input2)
             result = execute_program(data_copy)
             if result == GOAL_RESULT:

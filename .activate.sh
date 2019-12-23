@@ -1,1 +1,1 @@
-bin/activate
+venv/bin/activate

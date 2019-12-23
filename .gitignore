@@ -1,7 +1,4 @@
-bin
-lib
 .mypy_cache
 *.egg-info
 *pyc
-.Python
-include
+.venv

@@ -3,6 +3,8 @@
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import NamedTuple
+from typing import Optional
 from typing import Tuple
 
 import pytest
@@ -111,6 +113,7 @@ class Day3(AOCProblem):
 )
 def test_1(input_lines: List[str], expected: int) -> None:
     assert Day3().compute_1(input_lines) == expected
+    assert compute_1_vectorized(input_lines) == expected
 
 
 @pytest.mark.parametrize(
@@ -132,5 +135,98 @@ def test_2(input_lines: List[str], expected: int) -> None:
     assert Day3().compute_2(input_lines) == expected
 
 
+# For vectorized intersection solution
+class Vector(NamedTuple):
+    start: Point
+    direction: str
+    length: int
+
+
+def calculate_end(vec: Vector) -> Point:
+    if vec.direction == 'R':
+        return (vec.start[0]+vec.length, vec.start[1])
+    elif vec.direction == 'L':
+        return (vec.start[0]-vec.length, vec.start[1])
+    elif vec.direction == 'U':
+        return (vec.start[0], vec.start[1]+vec.length)
+    else:
+        return (vec.start[0], vec.start[1]-vec.length)
+
+
+def vectorize(wire: Wire) -> List[Vector]:
+    """Convert a Wire to a List of Vectors."""
+    vectors = []
+    start = (0, 0)
+    for step in wire.path:
+        direction, length = step[0], int(step[1:])
+        vec = Vector(start=start, direction=direction, length=length)
+        vectors.append(vec)
+        start = calculate_end(vec)
+    return vectors
+
+
+@pytest.mark.parametrize(
+    ('input_line', 'expected'),
+    [
+        (
+            'R75,D30',
+            [Vector((0, 0), 'R', 75), Vector((75, 0), 'D', 30)],
+        ),
+    ],
+)
+def test_vectorize(input_line: str, expected: List[Vector]) -> None:
+    wire = Wire(input_line.strip().split(","))
+    assert vectorize(wire) == expected
+
+
+def find_intersection(vec1: Vector, vec2: Vector) -> Optional[Point]:
+    """
+    Find the point that 2 vectors intersect.
+    Assumes that vectors are not on the same line.
+    """
+    if vec1.direction in ('R', 'L'):
+        if vec2.direction in ('R', 'L'):
+            return None
+        horiz, vert = vec1, vec2
+    else:
+        if vec2.direction in ('U', 'D'):
+            return None
+        horiz, vert = vec2, vec1
+
+    if vert.direction == 'U':
+        vert_start, vert_end = vert.start[1], vert.start[1] + vert.length
+    else:
+        vert_start, vert_end = vert.start[1] - vert.length, vert.start[1]
+
+    if horiz.direction == 'R':
+        horiz_start, horiz_end = horiz.start[0], horiz.start[0] + horiz.length
+    else:
+        horiz_start, horiz_end = horiz.start[0] - horiz.length, horiz.start[0]
+
+    x = vert.start[0]
+    y = horiz.start[1]
+    if x == 0 and y == 0:
+        return None
+    if (
+        vert_start <= y <= vert_end and
+        horiz_start <= x <= horiz_end
+    ):
+        return (x, y)
+    else:
+        return None
+
+
+def compute_1_vectorized(input_lines: List[str]) -> int:
+    wire1, wire2 = parse_data_from_input(input_lines)
+    vec_1 = vectorize(wire1)
+    vec_2 = vectorize(wire2)
+    intersections = (filter(None, [
+        find_intersection(v1, v2) for v1 in vec_1 for v2 in vec_2
+    ]))
+    return min(manhattan(point) for point in intersections)
+
+
 if __name__ == '__main__':
-    exit(Day3().main())
+    day3 = Day3()
+    day3.add_alternate_1('vectorized', compute_1_vectorized)
+    exit(day3.main())

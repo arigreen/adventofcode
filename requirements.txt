@@ -1,3 +1,4 @@
 -e adventofcode/support
 pytest
 pre-commit
+black

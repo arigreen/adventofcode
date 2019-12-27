@@ -5,7 +5,6 @@ from AOCProblem import AOCProblem
 
 
 class DAY_CLASS(AOCProblem):
-
     def compute_1(self, input_lines: List[str]) -> int:
         # TODO: Implement solution here!
         return 0
@@ -16,7 +15,7 @@ class DAY_CLASS(AOCProblem):
 
 
 @pytest.mark.parametrize(
-    ('input_s', 'expected'),
+    ("input_s", "expected"),
     (
         # put given test cases here
     ),
@@ -26,7 +25,7 @@ def test_1(input_s: str, expected: int) -> None:
 
 
 @pytest.mark.parametrize(
-    ('input_s', 'expected'),
+    ("input_s", "expected"),
     (
         # put given test cases here
     ),
@@ -35,5 +34,5 @@ def test_2(input_s: str, expected: int) -> None:
     assert DAY_CLASS().compute_1([input_s]) == expected
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(DAY_CLASS().main())

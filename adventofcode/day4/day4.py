@@ -22,29 +22,23 @@ from AOCProblem import AOCProblem
 # Thus there must be at least one string of exactly 2 consecutive digits
 
 
-def is_valid(x: int):
+def is_valid(x: int) -> bool:
     if x < 100000 or x > 999999:
         return False
     digits = [ch for ch in str(x)]
 
     # Ensure adjacent values exist
-    if not any([
-        digits[i] == digits[i + 1]
-        for i in range(0, len(digits)-1)
-    ]):
+    if not any([digits[i] == digits[i + 1] for i in range(0, len(digits) - 1)]):
         return False
 
     # Ensure no decreasing digits
-    if any([
-        digits[i] > digits[i + 1]
-        for i in range(0, len(digits)-1)
-    ]):
+    if any([digits[i] > digits[i + 1] for i in range(0, len(digits) - 1)]):
         return False
 
     return True
 
 
-def is_valid_2(x: int):
+def is_valid_2(x: int) -> bool:
     if not is_valid(x):
         return False
 
@@ -52,9 +46,9 @@ def is_valid_2(x: int):
     digits = [ch for ch in str(x)]
     for i in range(5):
         if (
-            digits[i] == digits[i+1]
-            and (i == 0 or digits[i] != digits[i-1])
-            and (i == 4 or digits[i] != digits[i+2])
+            digits[i] == digits[i + 1]
+            and (i == 0 or digits[i] != digits[i - 1])
+            and (i == 4 or digits[i] != digits[i + 2])
         ):
             return True
 
@@ -62,7 +56,6 @@ def is_valid_2(x: int):
 
 
 class Day4(AOCProblem):
-
     def compute_1(self, input_lines: List[str]) -> int:
         start, end = [int(value) for value in input_lines[0].split("-")]
         return len([x for x in range(start, end + 1) if is_valid(x)])
@@ -73,29 +66,19 @@ class Day4(AOCProblem):
 
 
 @pytest.mark.parametrize(
-    ('num', 'expected'),
-    (
-        [111111, True],
-        [223450, False],
-        [123789, False],
-    ),
+    ("num", "expected"), ([111111, True], [223450, False], [123789, False],),
 )
 def test_1(num: int, expected: bool) -> None:
     assert is_valid(num) == expected
 
 
 @pytest.mark.parametrize(
-    ('num', 'expected'),
-    (
-        [112233, True],
-        [123444, False],
-        [111122, True],
-        [788899, True],
-    ),
+    ("num", "expected"),
+    ([112233, True], [123444, False], [111122, True], [788899, True],),
 )
 def test_2(num: int, expected: bool) -> None:
     assert is_valid_2(num) == expected
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(Day4().main())

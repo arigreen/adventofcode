@@ -18,6 +18,7 @@ from AOCProblem import AOCProblem
 
 Path = List[str]
 Point = Tuple[int, int]
+ScoringFunction = Callable[[Point, "Wire"], int]
 
 
 UNIT_VEC = {
@@ -61,9 +62,17 @@ def manhattan(point: Point) -> int:
     return abs(point[0]) + abs(point[1])
 
 
+def score_manhattan(point: Point, wire: Wire):
+    return manhattan(point) / 2
+
+
+def score_steps(point: Point, wire: Wire):
+    return wire.points_to_steps[point]
+
+
 def compute_generic(
     input_lines: List[str],
-    scoring_fn: Callable[[Point], int],
+    scoring_fn: ScoringFunction,
 ) -> int:
     wire1, wire2 = parse_data_from_input(input_lines)
     wire1.trace_path()
@@ -71,29 +80,19 @@ def compute_generic(
     common_points = (
         wire1.points_to_steps.keys() & wire2.points_to_steps.keys()
     )
-    return min(scoring_fn(point) for point in common_points)
+    return min(
+        scoring_fn(point, wire1) + scoring_fn(point, wire2)
+        for point in common_points
+    )
 
 
 class Day3(AOCProblem):
 
     def compute_1(self, input_lines: List[str]) -> int:
-        return compute_generic(input_lines, manhattan)
+        return compute_generic(input_lines, score_manhattan)
 
     def compute_2(self, input_lines: List[str]) -> int:
-        # TODO: Figure out how to use compute_generic here
-        # The challenge is that the scoring function relies
-        # on state internal to the instance that is created inside
-        # compute_generic (wire1, wire2)
-        wire1, wire2 = parse_data_from_input(input_lines)
-        wire1.trace_path()
-        wire2.trace_path()
-        common_points = (
-            wire1.points_to_steps.keys() & wire2.points_to_steps.keys()
-        )
-        return min(
-            wire1.points_to_steps[point] + wire2.points_to_steps[point]
-            for point in common_points
-        )
+        return compute_generic(input_lines, score_steps)
 
 
 @pytest.mark.parametrize(

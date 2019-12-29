@@ -6,9 +6,6 @@ import pytest
 from AOCProblem import AOCProblem
 
 
-GOAL_RESULT = 19690720
-
-
 class OpCode(Enum):
     ADD = 1
     MULTIPLY = 2
@@ -112,7 +109,7 @@ class Program:
             elif op_code == OpCode.TERM:
                 break
             else:
-                raise Exception(f"Invalid OP_CODE {op_code}")
+                raise NotImplementedError(op_code)
         return self.data[0]
 
 

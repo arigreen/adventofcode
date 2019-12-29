@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import List
-from typing import Literal
 from typing import Optional
-from typing import Tuple
 
 import pytest
 from AOCProblem import AOCProblem
@@ -23,7 +21,9 @@ class OpCode(Enum):
     TERM = 99
 
 
-ParameterMode = Literal["Position", "Immediate"]
+class ParameterMode(Enum):
+    POSITION = 0
+    IMMEDIATE = 1
 
 
 class Program:
@@ -46,38 +46,32 @@ class Program:
         data = [int(x) for x in input_line.split(",")]
         return Program(data)
 
-    def parse_operation(self, instruction: int) -> Tuple[OpCode, List[ParameterMode]]:
-        op_code = OpCode(instruction % 100)
-        instruction = instruction // 100
-        param_modes: List[ParameterMode] = []
-        while instruction > 0:
-            param_mode: ParameterMode = "Immediate" if instruction % 10 == 1 else "Position"
-            param_modes.append(param_mode)
-            instruction = instruction // 10
-        while len(param_modes) < 4:
-            param_modes.append("Position")
-        return op_code, param_modes
+    def current_operation(self) -> OpCode:
+        return OpCode(self.data[self.position] % 100)
 
     def output(self, value: int) -> None:
         self.outputs.append(value)
 
-    def get_param_value(self, index: int, param_modes: List[ParameterMode]) -> int:
-        value = self.data[self.position + index]
-        if param_modes[index - 1] == "Position":
-            value = self.data[value]
-        return value
+    def get_parameter(self, index: int) -> int:
+        param_mode = ParameterMode(self.data[self.position] // 10 ** (1 + index) % 10)
+        if param_mode == ParameterMode.POSITION:
+            return self.data[self.data[self.position + index]]
+        elif param_mode == ParameterMode.IMMEDIATE:
+            return self.data[self.position + index]
+        else:
+            raise NotImplementedError(param_mode)
 
     def execute(self) -> int:
         while True:
-            op_code, param_modes = self.parse_operation(self.data[self.position])
+            op_code = self.current_operation()
             if op_code == OpCode.ADD:
-                input1 = self.get_param_value(1, param_modes)
-                input2 = self.get_param_value(2, param_modes)
+                input1 = self.get_parameter(1)
+                input2 = self.get_parameter(2)
                 self.data[self.data[self.position + 3]] = input1 + input2
                 self.position += 4
             elif op_code == OpCode.MULTIPLY:
-                input1 = self.get_param_value(1, param_modes)
-                input2 = self.get_param_value(2, param_modes)
+                input1 = self.get_parameter(1)
+                input2 = self.get_parameter(2)
                 self.data[self.data[self.position + 3]] = input1 * input2
                 self.position += 4
             elif op_code == OpCode.SAVE:
@@ -86,32 +80,32 @@ class Program:
                 self.data[write_position] = user_input
                 self.position += 2
             elif op_code == OpCode.OUTPUT:
-                value = self.get_param_value(1, param_modes)
+                value = self.get_parameter(1)
                 self.output(value)
                 self.position += 2
             elif op_code == OpCode.JUMP_IF:
-                value = self.get_param_value(1, param_modes)
+                value = self.get_parameter(1)
                 if value:
-                    new_position = self.get_param_value(2, param_modes)
+                    new_position = self.get_parameter(2)
                     self.position = new_position
                 else:
                     self.position += 3
             elif op_code == OpCode.JUMP_IF_NOT:
-                value = self.get_param_value(1, param_modes)
+                value = self.get_parameter(1)
                 if not value:
-                    new_position = self.get_param_value(2, param_modes)
+                    new_position = self.get_parameter(2)
                     self.position = new_position
                 else:
                     self.position += 3
             elif op_code == OpCode.LESS_THAN:
-                value1 = self.get_param_value(1, param_modes)
-                value2 = self.get_param_value(2, param_modes)
+                value1 = self.get_parameter(1)
+                value2 = self.get_parameter(2)
                 write_position = self.data[self.position + 3]
                 self.data[write_position] = 1 if value1 < value2 else 0
                 self.position += 4
             elif op_code == OpCode.EQUALS:
-                value1 = self.get_param_value(1, param_modes)
-                value2 = self.get_param_value(2, param_modes)
+                value1 = self.get_parameter(1)
+                value2 = self.get_parameter(2)
                 write_position = self.data[self.position + 3]
                 self.data[write_position] = 1 if value1 == value2 else 0
                 self.position += 4

@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import DefaultDict
+from typing import Dict
 from typing import List
 from typing import Set
 
@@ -77,6 +78,34 @@ def sum_of_paths(input_lines: List[str]) -> int:
     return sum(distance_to_com(node) for node in nodes_to_parents)
 
 
+def find_closest_neighbor(input_lines: List[str]) -> int:
+    """
+    Find the Path from YOU to COM and from SAN to COM. Find the closest common
+    ancestor. Sum the paths to that ancestor.
+    Inspired by asottile's solution.
+    """
+    nodes_to_parents = {}
+    for line in input_lines:
+        parent, child = line.split(")")
+        nodes_to_parents[child] = parent
+
+    def build_path(start: Node, end: Node) -> Dict[Node, int]:
+        distance_to_node = {start: 0}
+        length = 0
+        curr = start
+        while curr != end:
+            curr = nodes_to_parents[curr]
+            length += 1
+            distance_to_node[curr] = length
+        return distance_to_node
+
+    san_to_com = build_path("SAN", "COM")
+    you_to_com = build_path("YOU", "COM")
+
+    common = you_to_com.keys() & san_to_com.keys()
+    return max(0, min(san_to_com[node] + you_to_com[node] - 2 for node in common))
+
+
 class Day6(AOCProblem):
     def compute_1(self, input_lines: List[str]) -> int:
         tree = parse_tree(input_lines)
@@ -120,9 +149,9 @@ def test_1(input_lines: List[str], expected: int) -> None:
 @pytest.mark.parametrize(
     ("input_lines", "expected"),
     (
-        (["SAN)YOU"], 0),
-        (["SAN)A", "A)YOU"], 0),
-        (["SAN)A", "A)B", "B)YOU"], 1),
+        (["COM)SAN", "SAN)YOU"], 0),
+        (["COM)SAN", "SAN)A", "A)YOU"], 0),
+        (["COM)SAN", "SAN)A", "A)B", "B)YOU"], 1),
         (
             [
                 "COM)B",
@@ -145,9 +174,11 @@ def test_1(input_lines: List[str], expected: int) -> None:
 )
 def test_2(input_lines: List[str], expected: int) -> None:
     assert Day6().compute_2(input_lines) == expected
+    assert find_closest_neighbor(input_lines) == expected
 
 
 if __name__ == "__main__":
     day6 = Day6()
     day6.add_alternate_1("sum_of_paths", sum_of_paths)
+    day6.add_alternate_2("find_closest_neighbor", find_closest_neighbor)
     exit(day6.main())

@@ -34,6 +34,9 @@ class AOCProblem:
     def add_alternate_1(self, name: str, fn: Callable[[List[str]], int]) -> None:
         self._alternate_solutions_1.append(AlternateSolution(name, fn))
 
+    def add_alternate_2(self, name: str, fn: Callable[[List[str]], int]) -> None:
+        self._alternate_solutions_2.append(AlternateSolution(name, fn))
+
     def main(self) -> int:
         input_lines = self.parse_input()
         with timing():
@@ -44,6 +47,10 @@ class AOCProblem:
                 print(f"Part 1 ({name}): {fn(input_lines)}")
 
         with timing():
-            print(f"Part 2: {self.compute_2(input_lines)}")
+            print(f"Part 2 (original): {self.compute_2(input_lines)}")
+
+        for name, fn in self._alternate_solutions_2:
+            with timing():
+                print(f"Part 2 ({name}): {fn(input_lines)}")
 
         return 0

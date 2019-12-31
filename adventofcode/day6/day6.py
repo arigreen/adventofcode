@@ -55,6 +55,28 @@ def find_shortest_path_length(tree: Tree, start: Node, end: Node) -> int:
     raise ValueError("There is no path for the given inputs")
 
 
+def sum_of_paths(input_lines: List[str]) -> int:
+    """
+    For each node in the tree, find the length from that node to COM.
+    Return the sum.
+    Inspired by asottile's solution.
+    """
+    nodes_to_parents = {}
+    for line in input_lines:
+        parent, child = line.split(")")
+        nodes_to_parents[child] = parent
+
+    def distance_to_com(node: Node) -> int:
+        distance = 0
+        curr = node
+        while curr != "COM":
+            distance += 1
+            curr = nodes_to_parents[curr]
+        return distance
+
+    return sum(distance_to_com(node) for node in nodes_to_parents)
+
+
 class Day6(AOCProblem):
     def compute_1(self, input_lines: List[str]) -> int:
         tree = parse_tree(input_lines)
@@ -92,6 +114,7 @@ class Day6(AOCProblem):
 )
 def test_1(input_lines: List[str], expected: int) -> None:
     assert Day6().compute_1(input_lines) == expected
+    assert sum_of_paths(input_lines) == expected
 
 
 @pytest.mark.parametrize(
@@ -125,4 +148,6 @@ def test_2(input_lines: List[str], expected: int) -> None:
 
 
 if __name__ == "__main__":
-    exit(Day6().main())
+    day6 = Day6()
+    day6.add_alternate_1("sum_of_paths", sum_of_paths)
+    exit(day6.main())

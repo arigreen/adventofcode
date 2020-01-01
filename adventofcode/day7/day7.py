@@ -7,7 +7,7 @@ from typing import List
 
 import pytest
 from AOCProblem import AOCProblem
-from int_code import IntCode
+from IntCode import IntCode
 
 
 @pytest.mark.parametrize(

@@ -135,12 +135,29 @@ class IntCode:
 @pytest.mark.parametrize(
     ("input_s", "expected"),
     (
+        ("1,9,10,3,2,3,11,0,99,30,40,50", 3500),
+        ("1,0,0,0,99", 2),
+        ("2,3,0,3,99", 2),
+        ("2,4,4,5,99,0", 2),
+        ("1,1,1,4,99,5,6,0,99", 30),
+    ),
+)
+def test_pos_0(input_s: str, expected: int) -> None:
+    data = [int(x) for x in input_s.split(",")]
+    program = IntCode(data)
+    asyncio.run(program.execute())
+    assert program.data[0] == expected
+
+
+@pytest.mark.parametrize(
+    ("input_s", "expected"),
+    (
         ("1002,4,3,4,33", [1002, 4, 3, 4, 99]),
         ("1101,100,-1,4,0", [1101, 100, -1, 4, 99]),
     ),
 )
 def test_full(input_s: str, expected: List[int]) -> None:
-    data = [int(x) for x in input_s.split()]
+    data = [int(x) for x in input_s.split(",")]
     program = IntCode(data)
     asyncio.run(program.execute())
     assert program.data == expected

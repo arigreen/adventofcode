@@ -149,88 +149,48 @@ def test_2(data: List[int], expected: int) -> None:
     assert result == expected
 
 
-async def run_program_repeatedly(data: List[int], ordering: List[int]) -> int:
-    # create 5 programs
-    queue_1: asyncio.Queue[int] = asyncio.Queue()
-    queue_2: asyncio.Queue[int] = asyncio.Queue()
-    queue_3: asyncio.Queue[int] = asyncio.Queue()
-    queue_4: asyncio.Queue[int] = asyncio.Queue()
-    queue_5: asyncio.Queue[int] = asyncio.Queue()
-    result_queue: asyncio.Queue[int] = asyncio.Queue()
-    prog1 = IntCode(copy.copy(data), queue_1, queue_2)
-    prog2 = IntCode(copy.copy(data), queue_2, queue_3)
-    prog3 = IntCode(copy.copy(data), queue_3, queue_4)
-    prog4 = IntCode(copy.copy(data), queue_4, queue_5)
-    prog5 = IntCode(copy.copy(data), queue_5, result_queue)
+async def run_program_repeatedly(
+    data: List[int], ordering: List[int], should_amplify: bool
+) -> int:  # create 5 programs
+    queues = []
+    num_programs = len(ordering)
+    for i in range(num_programs):
+        queue: asyncio.Queue[int] = asyncio.Queue()
+        queue.put_nowait(ordering[i])
+        queues.append(queue)
 
-    queue_1.put_nowait(ordering[0])
-    queue_2.put_nowait(ordering[1])
-    queue_3.put_nowait(ordering[2])
-    queue_4.put_nowait(ordering[3])
-    queue_5.put_nowait(ordering[4])
+    # append output queue for final program
+    if should_amplify:
+        queues.append(queues[0])
+    else:
+        queues.append(asyncio.Queue())
 
-    queue_1.put_nowait(0)
+    programs = [
+        IntCode(copy.copy(data), queues[i], queues[i + 1]) for i in range(num_programs)
+    ]
+    # initial input
+    queues[0].put_nowait(0)
 
-    task1 = prog1.execute()
-    task2 = prog2.execute()
-    task3 = prog3.execute()
-    task4 = prog4.execute()
-    task5 = prog5.execute()
-    tasks = [task1, task2, task3, task4, task5]
+    tasks = [prog.execute() for prog in programs]
 
     async def run_all(tasks: List[Coroutine[Any, Any, int]]) -> None:
         await asyncio.gather(*tasks)
 
     await run_all(tasks)
-    return await result_queue.get()
+    return await queues[-1].get()
 
 
 async def solve_1(data: List[int]) -> int:
     results = [
-        await run_program_repeatedly(data, list(ordering))
+        await run_program_repeatedly(data, list(ordering), False)
         for ordering in itertools.permutations(range(5))
     ]
     return max(results)
 
 
-async def run_program_repeatedly_2(data: List[int], ordering: List[int]) -> int:
-    # create 5 programs
-    queue_1: asyncio.Queue[int] = asyncio.Queue()
-    queue_2: asyncio.Queue[int] = asyncio.Queue()
-    queue_3: asyncio.Queue[int] = asyncio.Queue()
-    queue_4: asyncio.Queue[int] = asyncio.Queue()
-    queue_5: asyncio.Queue[int] = asyncio.Queue()
-    prog1 = IntCode(copy.copy(data), queue_1, queue_2)
-    prog2 = IntCode(copy.copy(data), queue_2, queue_3)
-    prog3 = IntCode(copy.copy(data), queue_3, queue_4)
-    prog4 = IntCode(copy.copy(data), queue_4, queue_5)
-    prog5 = IntCode(copy.copy(data), queue_5, queue_1)
-
-    queue_1.put_nowait(ordering[0])
-    queue_2.put_nowait(ordering[1])
-    queue_3.put_nowait(ordering[2])
-    queue_4.put_nowait(ordering[3])
-    queue_5.put_nowait(ordering[4])
-
-    queue_1.put_nowait(0)
-
-    task1 = prog1.execute()
-    task2 = prog2.execute()
-    task3 = prog3.execute()
-    task4 = prog4.execute()
-    task5 = prog5.execute()
-    tasks = [task1, task2, task3, task4, task5]
-
-    async def run_all(tasks: List[Coroutine[Any, Any, int]]) -> None:
-        await asyncio.gather(*tasks)
-
-    await run_all(tasks)
-    return await queue_1.get()
-
-
 async def solve_2(data: List[int]) -> int:
     results = [
-        await run_program_repeatedly_2(data, list(ordering))
+        await run_program_repeatedly(data, list(ordering), True)
         for ordering in itertools.permutations(range(5, 10))
     ]
     return max(results)

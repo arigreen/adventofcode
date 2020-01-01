@@ -1,135 +1,10 @@
 import copy
 import itertools
-from enum import Enum
 from typing import List
 
 import pytest
 from AOCProblem import AOCProblem
-
-
-class NoInputException(Exception):
-    pass
-
-
-class OpCode(Enum):
-    ADD = 1
-    MULTIPLY = 2
-    SAVE = 3
-    OUTPUT = 4
-    JUMP_IF = 5
-    JUMP_IF_NOT = 6
-    LESS_THAN = 7
-    EQUALS = 8
-    TERM = 99
-
-
-class ParameterMode(Enum):
-    POSITION = 0
-    IMMEDIATE = 1
-
-
-class Program:
-    def __init__(self, data: List[int]) -> None:
-        self.data = data
-        self.original_data = copy.copy(self.data)
-        self.position = 0
-        self.finished = False
-        self.inputs: List[int] = []
-        self.outputs: List[int] = []
-
-    def set_input(self, value: int) -> None:
-        self.inputs.append(value)
-
-    def restore(self) -> None:
-        self.data = copy.copy(self.original_data)
-        self.position = 0
-        self.finished = False
-        self.inputs = []
-        self.outputs = []
-
-    def read_input(self) -> int:
-        if not self.inputs:
-            raise NoInputException()
-        return self.inputs.pop(0)
-
-    @classmethod
-    def parse_from_input(cls, input_line: str) -> "Program":
-        data = [int(x) for x in input_line.split(",")]
-        return Program(data)
-
-    def current_operation(self) -> OpCode:
-        return OpCode(self.data[self.position] % 100)
-
-    def output(self, value: int) -> None:
-        self.outputs.append(value)
-
-    def get_parameter(self, index: int) -> int:
-        param_mode = ParameterMode(self.data[self.position] // 10 ** (1 + index) % 10)
-        if param_mode == ParameterMode.POSITION:
-            return self.data[self.data[self.position + index]]
-        elif param_mode == ParameterMode.IMMEDIATE:
-            return self.data[self.position + index]
-        else:
-            raise NotImplementedError(param_mode)
-
-    def execute(self) -> int:
-        while True:
-            op_code = self.current_operation()
-            if op_code == OpCode.ADD:
-                input1 = self.get_parameter(1)
-                input2 = self.get_parameter(2)
-                self.data[self.data[self.position + 3]] = input1 + input2
-                self.position += 4
-            elif op_code == OpCode.MULTIPLY:
-                input1 = self.get_parameter(1)
-                input2 = self.get_parameter(2)
-                self.data[self.data[self.position + 3]] = input1 * input2
-                self.position += 4
-            elif op_code == OpCode.SAVE:
-                try:
-                    user_input = self.read_input()
-                except NoInputException:
-                    return -1
-
-                write_position = self.data[self.position + 1]
-                self.data[write_position] = user_input
-                self.position += 2
-            elif op_code == OpCode.OUTPUT:
-                value = self.get_parameter(1)
-                self.output(value)
-                self.position += 2
-            elif op_code == OpCode.JUMP_IF:
-                value = self.get_parameter(1)
-                if value:
-                    new_position = self.get_parameter(2)
-                    self.position = new_position
-                else:
-                    self.position += 3
-            elif op_code == OpCode.JUMP_IF_NOT:
-                value = self.get_parameter(1)
-                if not value:
-                    new_position = self.get_parameter(2)
-                    self.position = new_position
-                else:
-                    self.position += 3
-            elif op_code == OpCode.LESS_THAN:
-                value1 = self.get_parameter(1)
-                value2 = self.get_parameter(2)
-                write_position = self.data[self.position + 3]
-                self.data[write_position] = 1 if value1 < value2 else 0
-                self.position += 4
-            elif op_code == OpCode.EQUALS:
-                value1 = self.get_parameter(1)
-                value2 = self.get_parameter(2)
-                write_position = self.data[self.position + 3]
-                self.data[write_position] = 1 if value1 == value2 else 0
-                self.position += 4
-            elif op_code == OpCode.TERM:
-                self.finished = True
-                break
-            else:
-                raise NotImplementedError(op_code)
-        return self.data[0]
+from int_code import IntCode
 
 
 @pytest.mark.parametrize(
@@ -217,8 +92,7 @@ class Program:
     ),
 )
 def test_1(data: List[int], expected: int) -> None:
-    program = Program(data)
-    assert solve_1(program) == expected
+    assert solve_1(data) == expected
 
 
 @pytest.mark.parametrize(
@@ -267,8 +141,7 @@ def test_1(data: List[int], expected: int) -> None:
     ),
 )
 def test_2(data: List[int], expected: int) -> None:
-    program = Program(data)
-    assert solve_2(program) == expected
+    assert solve_2(data) == expected
 
 
 @pytest.mark.parametrize(
@@ -279,13 +152,14 @@ def test_2(data: List[int], expected: int) -> None:
     ),
 )
 def test_full(input_s: str, expected: List[int]) -> None:
-    program = Program.parse_from_input(input_s)
+    program = IntCode.parse_from_input(input_s)
     program.execute()
     assert program.data == expected
 
 
-def run_program_repeatedly(program: Program, ordering: List[int]) -> int:
+def run_program_repeatedly(program: IntCode, ordering: List[int]) -> int:
     last_output = 0
+    # create 5 programs
     for x in ordering:
         program.restore()
         program.set_input(x)
@@ -296,14 +170,15 @@ def run_program_repeatedly(program: Program, ordering: List[int]) -> int:
     return last_output
 
 
-def solve_1(program: Program) -> int:
+def solve_1(data: List[int]) -> int:
+    program = IntCode(data)
     return max(
         run_program_repeatedly(program, list(ordering))
         for ordering in itertools.permutations(range(5))
     )
 
 
-def run_program_repeatedly_2(program: Program, ordering: List[int]) -> int:
+def run_program_repeatedly_2(program: IntCode, ordering: List[int]) -> int:
     program.restore()
 
     # create 5 programs
@@ -339,7 +214,8 @@ def run_program_repeatedly_2(program: Program, ordering: List[int]) -> int:
     return prog5.outputs[-1]
 
 
-def solve_2(program: Program) -> int:
+def solve_2(data: List[int]) -> int:
+    program = IntCode(data)
     return max(
         run_program_repeatedly_2(program, list(ordering))
         for ordering in itertools.permutations(range(5, 10))
@@ -348,12 +224,12 @@ def solve_2(program: Program) -> int:
 
 class Day7(AOCProblem):
     def compute_1(self, input_lines: List[str]) -> int:
-        program = Program.parse_from_input(input_lines[0])
-        return solve_1(program)
+        data = [int(x) for x in input_lines[0].split(",")]
+        return solve_1(data)
 
     def compute_2(self, input_lines: List[str]) -> int:
-        program = Program.parse_from_input(input_lines[0])
-        return solve_2(program)
+        data = [int(x) for x in input_lines[0].split(",")]
+        return solve_2(data)
 
 
 if __name__ == "__main__":

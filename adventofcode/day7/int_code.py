@@ -1,3 +1,4 @@
+import asyncio
 import copy
 from enum import Enum
 from typing import List
@@ -32,40 +33,32 @@ class IntCode:
     def __init__(
         self,
         data: List[int],
-        #        input_fn: Callable[[], int]=None,
-        #        output_fn: Callable[[int], None]=None,
+        input_queue: "asyncio.Queue[int]" = None,
+        output_queue: "asyncio.Queue[int]" = None,
     ) -> None:
         self.data = data
         self.original_data = copy.copy(self.data)
         self.position = 0
         self.finished = False
-        #        self.input_fn = input_fn
-        #        self.output_fn = output_fn
-        self.inputs: List[int] = []
-        self.outputs: List[int] = []
+        self.input_queue = input_queue
+        self.output_queue = output_queue
 
     def restore(self) -> None:
         self.data = copy.copy(self.original_data)
         self.position = 0
         self.finished = False
-        self.inputs = []
-        self.outputs = []
 
-    def read_input(self) -> int:
-        if not self.inputs:
-            raise NoInputException()
-        return self.inputs.pop(0)
+    async def read_input(self) -> int:
+        if not self.input_queue:
+            raise NotImplementedError("No input queue")
+        result = await self.input_queue.get()
+        return result
+        return await self.input_queue.get()
 
-    def write_output(self, value: int) -> None:
-        self.outputs.append(value)
-
-    def set_input(self, value: int) -> None:
-        self.inputs.append(value)
-
-    @classmethod
-    def parse_from_input(cls, input_line: str) -> "IntCode":
-        data = [int(x) for x in input_line.split(",")]
-        return IntCode(data)
+    async def write_output(self, value: int) -> None:
+        if not self.output_queue:
+            raise NotImplementedError("No output queue")
+        await self.output_queue.put(value)
 
     def current_operation(self) -> OpCode:
         return OpCode(self.data[self.position] % 100)
@@ -79,7 +72,7 @@ class IntCode:
         else:
             raise NotImplementedError(param_mode)
 
-    def execute(self) -> int:
+    async def execute(self) -> int:
         while True:
             op_code = self.current_operation()
             if op_code == OpCode.ADD:
@@ -94,7 +87,7 @@ class IntCode:
                 self.position += 4
             elif op_code == OpCode.SAVE:
                 try:
-                    user_input = self.read_input()
+                    user_input = await self.read_input()
                 except NoInputException:
                     return -1
 
@@ -103,7 +96,7 @@ class IntCode:
                 self.position += 2
             elif op_code == OpCode.OUTPUT:
                 value = self.get_parameter(1)
-                self.write_output(value)
+                await self.write_output(value)
                 self.position += 2
             elif op_code == OpCode.JUMP_IF:
                 value = self.get_parameter(1)
@@ -147,6 +140,7 @@ class IntCode:
     ),
 )
 def test_full(input_s: str, expected: List[int]) -> None:
-    program = IntCode.parse_from_input(input_s)
-    program.execute()
+    data = [int(x) for x in input_s.split()]
+    program = IntCode(data)
+    asyncio.run(program.execute())
     assert program.data == expected

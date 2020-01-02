@@ -3,11 +3,15 @@ import copy
 import itertools
 from typing import Any
 from typing import Coroutine
+from typing import Generator
+from typing import Iterable
 from typing import List
+from typing import Optional
 
 import pytest
 from AOCProblem import AOCProblem
 from IntCode import IntCode
+from IntCodeGen import IntCodeGen
 
 
 @pytest.mark.parametrize(
@@ -98,6 +102,12 @@ def test_1(data: List[int], expected: int) -> None:
     result = asyncio.run(solve_1(data))
     assert result == expected
 
+    result = max(
+        run_program_repeatedly_gen(data, list(ordering), False)
+        for ordering in itertools.permutations(range(5))
+    )
+    assert result == expected
+
 
 @pytest.mark.parametrize(
     ("data", "expected"),
@@ -146,6 +156,11 @@ def test_1(data: List[int], expected: int) -> None:
 )
 def test_2(data: List[int], expected: int) -> None:
     result = asyncio.run(solve_2(data))
+    assert result == expected
+    result = max(
+        run_program_repeatedly_gen(data, list(ordering), True)
+        for ordering in itertools.permutations(range(5, 10))
+    )
     assert result == expected
 
 
@@ -196,6 +211,50 @@ async def solve_2(data: List[int]) -> int:
     return max(results)
 
 
+def run_program_repeatedly_gen(
+    data: List[int], ordering: List[int], should_amplify: bool
+) -> int:  # create 5 programs
+
+    gens: Iterable[Generator[Optional[int], int, None]] = [
+        IntCodeGen(copy.copy(data)).execute() for _ in ordering
+    ]
+
+    # send the phase inputs
+    for gen in gens:
+        next(gen)
+        gen.send(ordering.pop(0))
+
+    next_input = 0
+    gens = itertools.cycle(gens) if should_amplify else gens
+    try:
+        for gen in gens:
+            last_output = gen.send(next_input)
+            if last_output is None:
+                raise Exception()
+            next_input = last_output
+    except StopIteration:
+        pass
+    if last_output is None:
+        raise Exception()
+    return last_output
+
+
+def solve_1_gen(input_lines: List[str]) -> int:
+    data = [int(x) for x in input_lines[0].split(",")]
+    return max(
+        run_program_repeatedly_gen(data, list(ordering), False)
+        for ordering in itertools.permutations(range(5))
+    )
+
+
+def solve_2_gen(input_lines: List[str]) -> int:
+    data = [int(x) for x in input_lines[0].split(",")]
+    return max(
+        run_program_repeatedly_gen(data, list(ordering), True)
+        for ordering in itertools.permutations(range(5, 10))
+    )
+
+
 class Day7(AOCProblem):
     def compute_1(self, input_lines: List[str]) -> int:
         data = [int(x) for x in input_lines[0].split(",")]
@@ -207,4 +266,7 @@ class Day7(AOCProblem):
 
 
 if __name__ == "__main__":
-    exit(Day7().main())
+    day7 = Day7()
+    day7.add_alternate_1("generator", solve_1_gen)
+    day7.add_alternate_2("generator", solve_2_gen)
+    exit(day7.main())
